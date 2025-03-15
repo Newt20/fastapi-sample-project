@@ -1,15 +1,20 @@
+import os
 from celery import Celery
 import time
 import pymongo
 
+redis_uri = os.getenv("REDIS_URI", "redis://redis:6379/0")
+mongo_uri = os.getenv("MONGO_URI", "mongodb://mongodb:27017/")
+
+
 celery_app = Celery(
     "worker",
-    broker="redis://redis:6379/0",
-    backend="mongodb://mongodb:27017/tasks"
+    broker=redis_uri,
+    backend=f"{mongo_uri}tasks"
 )
 
 # MongoDB client
-client = pymongo.MongoClient("mongodb://mongodb:27017/")
+client = pymongo.MongoClient(mongo_uri)
 db = client["celery_db"]
 collection = db["task_results"]
 

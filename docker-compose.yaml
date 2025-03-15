@@ -1,0 +1,62 @@
+version: "3.8"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  app_data:
+  celery_data:
+
+services:
+  fastapi:
+    image: fatinw4/fastapi-celery-redis-sample-project:v0.0.2
+    container_name: fastapi-service
+    ports:
+      - "8000:8000"
+    environment:
+      - SERVICE_TYPE=fastapi
+      - MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/
+      - REDIS_URI=redis://redis:6379/0
+    volumes:
+      - app_data:/app/data
+    depends_on:
+      - redis
+      - mongodb
+    networks:
+      - app-network
+
+  celery:
+    image: fatinw4/fastapi-celery-redis-sample-project:v0.0.2
+    container_name: celery-service
+    environment:
+      - SERVICE_TYPE=celery
+      - MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/
+      - REDIS_URI=redis://redis:6379/0
+    volumes:
+      - celery_data:/app/data
+    depends_on:
+      - redis
+      - mongodb
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-service
+
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb-service
+
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
